@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Добро пожаловать</h2>
+        <p>Вы вошли как <strong>{{ username }}</strong></p>
+
+        <div class="info-block">
+            <div class="info-label">Сессионный ключ (3DH)</div>
+            <div class="info-value">{{ session_key[:24] }}...</div>
+        </div>
+
+        <div class="info-block">
+            <div class="info-label">ZKP верификация</div>
+            <div class="info-value" style="color: {% if zkp_ok %}#22c55e{% else %}#ef4444{% endif %}">
+                {% if zkp_ok %}✔ Подтверждено — ключи совпадают{% else %}✘ Не пройдена{% endif %}
+            </div>
+        </div>
+
+        <div class="info-block">
+            <div class="info-label">Протокол</div>
+            <div class="info-value">OPAQUE (RFC 9807) + Schnorr ZKP</div>
+        </div>
+
+        <div class="info-block">
+            <div class="info-label">Кривая</div>
+            <div class="info-value">P-256 (SECP256R1)</div>
+        </div>
+
+        <div class="info-block">
+            <div class="info-label">Хранилище</div>
+            <div class="info-value">MongoDB</div>
+        </div>
+
+        <a href="{{ url_for('logout') }}" class="btn" style="display:block; text-align:center; text-decoration:none; margin-top:24px;">Выйти</a>
+    </div>
+
+</body>
+</html>

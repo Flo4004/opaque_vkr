@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Вход</h2>
+        <p>Рады видеть вас снова</p>
+
+        <form id="login-form">
+            <div class="input-group">
+                <input type="text" id="username" required>
+                <label for="username">Логин</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password" required>
+                <label for="password">Пароль</label>
+            </div>
+
+            <div id="msg" class="form-message"></div>
+
+            <button type="submit" class="btn">Войти</button>
+
+            <div class="register-link">
+                Нет аккаунта? <a href="{{ url_for('register') }}">Создать</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/opaque-client.js') }}"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('msg');
+            const btn = e.target.querySelector('.btn');
+            msg.textContent = '';
+            msg.className = 'form-message';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                msg.textContent = 'Заполните все поля';
+                msg.classList.add('error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'KE1: OPRF Blind...';
+
+            try {
+                // Step 1: Client generates KE1 (blind + ephemeral keypair)
+                const state = await OpaqueClient.loginStart(password);
+
+                btn.textContent = 'KE2: Server...';
+                const initRes = await fetch('/api/login/init', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, ke1: state.ke1 }),
+                });
+                const ke2 = await initRes.json();
+                if (!initRes.ok) throw new Error(ke2.error);
+
+                // Step 2: Client processes KE2, recovers envelope, 3DH, ZKP
+                btn.textContent = 'KE3: 3DH + ZKP...';
+                const finish = await OpaqueClient.loginFinish(state, username, ke2);
+
+                const finRes = await fetch('/api/login/finish', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, ke3: finish.ke3 }),
+                });
+                const finData = await finRes.json();
+                if (!finRes.ok) throw new Error(finData.error);
+
+                msg.textContent = 'Успешно! Переход...';
+                msg.classList.add('success');
+                window.location.href = '/dashboard';
+            } catch (err) {
+                msg.textContent = err.message || 'Ошибка входа';
+                msg.classList.add('error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Войти';
+            }
+        });
+    </script>
+
+</body>
+</html>

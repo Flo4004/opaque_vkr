@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Создать аккаунт</h2>
+        <p>Присоединяйтесь к нам сегодня</p>
+
+        <form id="register-form">
+            <div class="input-group">
+                <input type="text" id="username" required>
+                <label for="username">Логин</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password" required>
+                <label for="password">Пароль</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="confirm_password" required>
+                <label for="confirm_password">Повторите пароль</label>
+            </div>
+
+            <div id="msg" class="form-message"></div>
+
+            <button type="submit" class="btn">Зарегистрироваться</button>
+
+            <div class="register-link">
+                Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/opaque-client.js') }}"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('msg');
+            const btn = e.target.querySelector('.btn');
+            msg.textContent = '';
+            msg.className = 'form-message';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm  = document.getElementById('confirm_password').value;
+
+            if (!username || !password || !confirm) {
+                msg.textContent = 'Заполните все поля';
+                msg.classList.add('error');
+                return;
+            }
+
+            if (password !== confirm) {
+                msg.textContent = 'Пароли не совпадают';
+                msg.classList.add('error');
+                return;
+            }
+
+            if (password.length < 6) {
+                msg.textContent = 'Пароль должен быть не менее 6 символов';
+                msg.classList.add('error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'OPRF Blind...';
+
+            try {
+                // Step 1: Client blinds password, sends to server
+                const state = await OpaqueClient.registrationStart(password);
+
+                btn.textContent = 'OPRF Evaluate...';
+                const initRes = await fetch('/api/register/init', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username,
+                        blinded_element: state.blindedElement,
+                    }),
+                });
+                const initData = await initRes.json();
+                if (!initRes.ok) throw new Error(initData.error);
+
+                // Step 2: Client finalizes OPRF, creates envelope, sends record
+                btn.textContent = 'Envelope...';
+                const finish = await OpaqueClient.registrationFinish(state, initData);
+
+                const finRes = await fetch('/api/register/finish', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username,
+                        record: finish.record,
+                    }),
+                });
+                const finData = await finRes.json();
+                if (!finRes.ok) throw new Error(finData.error);
+
+                msg.textContent = 'Успешно! Переход ко входу...';
+                msg.classList.add('success');
+                setTimeout(() => window.location.href = '/login', 1500);
+            } catch (err) {
+                msg.textContent = err.message || 'Ошибка регистрации';
+                msg.classList.add('error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Зарегистрироваться';
+            }
+        });
+    </script>
+
+</body>
+</html>
