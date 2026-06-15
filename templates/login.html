@@ -84,7 +84,12 @@
                 msg.classList.add('success');
                 window.location.href = '/dashboard';
             } catch (err) {
-                msg.textContent = err.message || 'Ошибка входа';
+                const text = err.message || 'Ошибка входа';
+                if (text === 'EnvelopeRecoveryError') {
+                    msg.textContent = 'Неверный пароль';
+                } else {
+                    msg.textContent = text;
+                }
                 msg.classList.add('error');
             } finally {
                 btn.disabled = false;
