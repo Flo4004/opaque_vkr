@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
 # ── MongoDB ──
-mongo = MongoClient("mongodb://localhost:27017/")
+mongo = MongoClient(os.environ.get("MONGO_URI", "mongodb://localhost:27017/"))
 db = mongo["opaque_vkr"]
 config_col = db["server_config"]
 users_col  = db["users"]

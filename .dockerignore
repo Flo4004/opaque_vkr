@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.venv
+.git/
+.gitignore
+docs/
+*.md
+test_opaque.py
+user_db.json
+server_config.json
+*.pdf
