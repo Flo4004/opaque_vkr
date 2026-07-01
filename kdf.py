@@ -2,8 +2,8 @@
 Key derivation functions using only Python stdlib (hashlib, hmac).
 
 Implements:
-  - HKDF-Extract  (RFC 5869 §2.2)
-  - HKDF-Expand   (RFC 5869 §2.3)
+  - HKDF-Extract  (RFC 5869)
+  - HKDF-Expand   (RFC 5869)
   - PBKDF2-SHA256 (RFC 2898 / hashlib built-in)
 """
 
@@ -17,7 +17,7 @@ import math
 # 3. Вычисляет final_hash = SHA256( (salt ⊕ opad) + inner_hash )
 # 4. Возвращает final_hash
 
-# ──────────────────────── HKDF (RFC 5869) ─────────────────────────────
+# HKDF (RFC 5869)
 
 def hkdf_extract(salt: bytes, ikm: bytes) -> bytes:
     """HKDF-Extract: PRK = HMAC-SHA256(salt, IKM)."""
@@ -44,8 +44,7 @@ def hkdf_expand(prk: bytes, info: bytes, length: int) -> bytes:
 
     return okm[:length]
 
-
-# ──────────────────────── PBKDF2-SHA256 ───────────────────────────────
+# PBKDF2-SHA256
 
 def pbkdf2_sha256(password: bytes, salt: bytes, iterations: int,
                   key_length: int = 32) -> bytes:
